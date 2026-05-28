@@ -1,0 +1,178 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userExists(uid) {
+      return exists(/databases/$(database)/documents/users/$(uid));
+    }
+
+    function userRole(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data.role;
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function isEmployee() {
+      return signedIn()
+        && userExists(request.auth.uid)
+        && userRole(request.auth.uid) == "worker";
+    }
+
+    function isRecruiter() {
+      return signedIn()
+        && userExists(request.auth.uid)
+        && userRole(request.auth.uid) == "contractor";
+    }
+
+    function isAdmin() {
+      return signedIn() && request.auth.token.email == "admin@buildin.cm";
+    }
+
+    function isConversationParticipant(conversationId) {
+      return signedIn()
+        && get(/databases/$(database)/documents/conversations/$(conversationId))
+          .data.participants.hasAny([request.auth.uid]);
+    }
+
+    // Admin login still reads this collection before a Firebase auth session exists.
+    match /admins/{adminId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId)
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.role in ["worker", "contractor"];
+      allow update: if (isOwner(userId) || isAdmin())
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.role == resource.data.role;
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    match /workers/{workerId} {
+      allow read: if isOwner(workerId) || isRecruiter() || isAdmin();
+      allow create: if isEmployee()
+        && isOwner(workerId)
+        && request.resource.data.uid == request.auth.uid;
+      allow update: if (
+        isOwner(workerId) || isAdmin()
+      ) && request.resource.data.uid == resource.data.uid
+      || (
+        signedIn()
+        && request.resource.data.diff(resource.data)
+          .affectedKeys()
+          .hasOnly(["profileViews"])
+        && request.resource.data.profileViews == (
+          resource.data.profileViews == null
+            ? 1
+            : resource.data.profileViews + 1
+        )
+      );
+      allow delete: if isOwner(workerId) || isAdmin();
+    }
+
+    match /jobs/{jobId} {
+      allow read: if isAdmin()
+        || resource.data.contractorUid == request.auth.uid
+        || (signedIn() && resource.data.status == "active");
+      allow create: if isRecruiter()
+        && request.resource.data.contractorUid == request.auth.uid;
+      allow update, delete: if isAdmin()
+        || resource.data.contractorUid == request.auth.uid;
+    }
+
+    match /projects/{projectId} {
+      allow read: if isAdmin()
+        || resource.data.contractorUid == request.auth.uid
+        || (signedIn() && resource.data.status == "active");
+      allow create: if isRecruiter()
+        && request.resource.data.contractorUid == request.auth.uid;
+      allow update, delete: if isAdmin()
+        || resource.data.contractorUid == request.auth.uid;
+    }
+
+    match /applications/{applicationId} {
+      allow read: if isAdmin()
+        || resource.data.workerId == request.auth.uid
+        || resource.data.contractorUid == request.auth.uid;
+      allow create: if signedIn()
+        && request.resource.data.workerId == request.auth.uid
+        && request.resource.data.applicantId == request.auth.uid;
+      allow update, delete: if isAdmin()
+        || resource.data.contractorUid == request.auth.uid;
+    }
+
+    match /mobilisations/{mobilisationId} {
+      allow read: if isAdmin()
+        || resource.data.workerId == request.auth.uid
+        || resource.data.contractorId == request.auth.uid;
+      allow create: if isRecruiter()
+        && request.resource.data.contractorId == request.auth.uid;
+      allow update, delete: if isAdmin()
+        || resource.data.workerId == request.auth.uid
+        || resource.data.contractorId == request.auth.uid;
+    }
+
+    match /workImages/{imageId} {
+      allow read: if isAdmin()
+        || resource.data.workerId == request.auth.uid
+        || isRecruiter();
+      allow create: if isEmployee()
+        && request.resource.data.workerId == request.auth.uid;
+      allow update: if isAdmin() || resource.data.workerId == request.auth.uid;
+      allow delete: if isAdmin() || resource.data.workerId == request.auth.uid;
+    }
+
+    match /reviews/{reviewId} {
+      allow read: if isAdmin()
+        || resource.data.workerId == request.auth.uid
+        || isRecruiter();
+      allow create: if signedIn()
+        && isRecruiter()
+        && request.resource.data.contractorId == request.auth.uid;
+      allow update, delete: if isAdmin()
+        || resource.data.contractorId == request.auth.uid;
+    }
+
+    match /conversations/{conversationId} {
+      allow read: if isConversationParticipant(conversationId);
+      allow create: if signedIn()
+        && request.resource.data.participants.hasAny([request.auth.uid]);
+      allow update: if isConversationParticipant(conversationId);
+      allow delete: if isAdmin();
+
+      match /messages/{messageId} {
+        allow read, create, update: if isConversationParticipant(conversationId);
+        allow delete: if false;
+      }
+    }
+
+    match /notifications/{uid}/items/{notificationId} {
+      allow read, update, delete: if isOwner(uid) || isAdmin();
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly([
+          "type",
+          "message",
+          "relatedId",
+          "read",
+          "createdAt",
+        ])
+        && request.resource.data.read == false;
+    }
+
+    match /savedJobs/{uid} {
+      allow read, write: if isOwner(uid) || isAdmin();
+
+      match /jobs/{jobId} {
+        allow read, write: if isOwner(uid) || isAdmin();
+      }
+    }
+  }
+}

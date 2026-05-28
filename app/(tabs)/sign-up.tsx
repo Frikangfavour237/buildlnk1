@@ -4,6 +4,8 @@ import { router } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
+  Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -14,28 +16,40 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { logoutUser, registerUser } from "@/services/authService";
+import { COLORS } from "../../constants/theme";
 
 const C = {
-  orange: "#E8620A",
-  orangeLight: "#F97316",
-  orangeDark: "#C4520A",
-  orangePale: "#FEF0E6",
+  orange: COLORS.primary,
+  orangeLight: COLORS.secondaryDark,
+  orangeDark: COLORS.primaryDark,
+  orangePale: "#EEF2F7",
   yellow: "#CA8A04",
-  bg: "#FFFFFF",
-  surface: "#F3F1EE",
-  border: "#E5E2DC",
-  text: "#1A1712",
-  textSub: "#5C5650",
-  textMuted: "#9C958D",
-  textFaint: "#C4BDB4",
+  bg: COLORS.background,
+  surface: COLORS.card,
+  border: COLORS.border,
+  text: COLORS.textPrimary,
+  textSub: COLORS.textSecondary,
+  textMuted: COLORS.textMuted,
+  textFaint: "#cbd5e1",
+  textStrong: COLORS.textPrimary,
+  textMedium: COLORS.textSecondary,
+  textInert: COLORS.textMuted,
 };
 
 const ROLES = [
-  { label: "Worker / Labourer", icon: "hammer-outline" },
-  { label: "Tradesperson / Artisan", icon: "construct-outline" },
-  { label: "Site Supervisor", icon: "clipboard-outline" },
-  { label: "Engineer / Architect", icon: "calculator-outline" },
-  { label: "Employer / Recruiter", icon: "business-outline" },
+  {
+    label: "Contractor",
+    value: "contractor",
+    icon: "business-outline",
+    helper: "Post jobs and review workers",
+  },
+  {
+    label: "Worker",
+    value: "worker",
+    icon: "person-outline",
+    helper: "Build your profile and apply for jobs",
+  },
 ];
 
 export default function SignUpScreen() {
@@ -48,7 +62,7 @@ export default function SignUpScreen() {
   const [nameFocused, setNameFocused] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passFocused, setPassFocused] = useState(false);
-  const [showRoles, setShowRoles] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(24)).current;
@@ -83,6 +97,35 @@ export default function SignUpScreen() {
 
   const strength = getPasswordStrength();
 
+  const handleCreateAccount = async () => {
+    if (!name || !email || !password || !selectedRole) {
+      Alert.alert(
+        "Missing details",
+        "Add your name, email, password, and choose a role."
+      );
+      return;
+    }
+
+    setSubmitting(true);
+
+    const result = await registerUser(
+      email.trim(),
+      password,
+      name.trim(),
+      "",
+      selectedRole,
+    );
+    if (result.success) {
+      await logoutUser();
+      Alert.alert("Account Created", "Please sign in with your new account.");
+      router.replace("/(auth)/sign-in");
+    } else {
+      const message = result.error || "Unable to create your account.";
+      Alert.alert("Sign up failed", message);
+    }
+    setSubmitting(false);
+  };
+
   return (
     <View style={styles.container}>
       <KeyboardAvoidingView
@@ -113,11 +156,13 @@ export default function SignUpScreen() {
               { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
             ]}
           >
-            <View style={styles.logoMark}>
-              <Ionicons name="hammer" size={18} color="#fff" />
-            </View>
+            <Image
+              source={require("../../assets/images/build logo1.png")}
+              style={{ width: 32, height: 32, borderRadius: 8 }}
+              resizeMode="contain"
+            />
             <View>
-              <Text style={styles.brandName}>BUILDLNK</Text>
+              <Text style={styles.brandName}>BUILDIn</Text>
               <Text style={styles.brandSub}>Construction Jobs Cameroon</Text>
             </View>
           </Animated.View>
@@ -136,23 +181,6 @@ export default function SignUpScreen() {
             </View>
           </Animated.View>
 
-          {/* Social */}
-          <Animated.View
-            style={[
-              styles.socialRow,
-              { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-            ]}
-          >
-            <TouchableOpacity style={styles.socialBtn} activeOpacity={0.75}>
-              <Ionicons name="logo-google" size={18} color={C.text} />
-              <Text style={styles.socialBtnText}>Google</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.socialBtn} activeOpacity={0.75}>
-              <Ionicons name="logo-linkedin" size={18} color={C.text} />
-              <Text style={styles.socialBtnText}>LinkedIn</Text>
-            </TouchableOpacity>
-          </Animated.View>
-
           <Animated.View style={[styles.dividerRow, { opacity: fadeAnim }]}>
             <View style={styles.dividerLine} />
             <Text style={styles.dividerText}>or fill in your details</Text>
@@ -168,85 +196,31 @@ export default function SignUpScreen() {
           >
             {/* Role Selector */}
             <Text style={styles.label}>I am a...</Text>
-            <TouchableOpacity
-              style={[
-                styles.roleSelector,
-                showRoles && styles.roleSelectorOpen,
-              ]}
-              onPress={() => setShowRoles(!showRoles)}
-              activeOpacity={0.8}
-            >
-              <Ionicons
-                name="construct-outline"
-                size={17}
-                color={selectedRole ? C.orange : C.textMuted}
-                style={{ marginRight: 10 }}
-              />
-              <Text
-                style={[
-                  styles.roleSelectorText,
-                  selectedRole && styles.roleSelectorTextActive,
-                ]}
-              >
-                {selectedRole || "Select your role"}
-              </Text>
-              <Ionicons
-                name={showRoles ? "chevron-up" : "chevron-down"}
-                size={16}
-                color={C.textMuted}
-              />
-            </TouchableOpacity>
-
-            {showRoles && (
-              <View style={styles.roleDropdown}>
-                {ROLES.map((role) => (
+            <View style={styles.roleGrid}>
+              {ROLES.map((role) => {
+                const active = selectedRole === role.value;
+                return (
                   <TouchableOpacity
-                    key={role.label}
-                    style={[
-                      styles.roleOption,
-                      selectedRole === role.label && styles.roleOptionActive,
-                    ]}
-                    onPress={() => {
-                      setSelectedRole(role.label);
-                      setShowRoles(false);
-                    }}
-                    activeOpacity={0.8}
+                    key={role.value}
+                    style={[styles.roleCard, active && styles.roleCardActive]}
+                    onPress={() => setSelectedRole(role.value)}
+                    activeOpacity={0.85}
                   >
-                    <View
-                      style={[
-                        styles.roleIconWrap,
-                        selectedRole === role.label &&
-                          styles.roleIconWrapActive,
-                      ]}
-                    >
+                    <View style={[styles.roleIconWrap, active && styles.roleIconWrapActive]}>
                       <Ionicons
                         name={role.icon as any}
-                        size={16}
-                        color={
-                          selectedRole === role.label ? C.orange : C.textMuted
-                        }
+                        size={20}
+                        color={active ? "#fff" : C.textMedium}
                       />
                     </View>
-                    <Text
-                      style={[
-                        styles.roleOptionText,
-                        selectedRole === role.label &&
-                          styles.roleOptionTextActive,
-                      ]}
-                    >
+                    <Text style={[styles.roleCardTitle, active && styles.roleCardTitleActive]}>
                       {role.label}
                     </Text>
-                    {selectedRole === role.label && (
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={16}
-                        color={C.orange}
-                      />
-                    )}
+                    <Text style={styles.roleCardHelper}>{role.helper}</Text>
                   </TouchableOpacity>
-                ))}
-              </View>
-            )}
+                );
+              })}
+            </View>
 
             {/* Full Name */}
             <Text style={styles.label}>Full Name</Text>
@@ -256,7 +230,7 @@ export default function SignUpScreen() {
               <Ionicons
                 name="person-outline"
                 size={17}
-                color={nameFocused ? C.orange : C.textMuted}
+                        color={nameFocused ? C.textMedium : C.textMuted}
                 style={styles.inputIcon}
               />
               <TextInput
@@ -279,7 +253,7 @@ export default function SignUpScreen() {
               <Ionicons
                 name="mail-outline"
                 size={17}
-                color={emailFocused ? C.orange : C.textMuted}
+                        color={emailFocused ? C.textMedium : C.textMuted}
                 style={styles.inputIcon}
               />
               <TextInput
@@ -303,7 +277,7 @@ export default function SignUpScreen() {
               <Ionicons
                 name="lock-closed-outline"
                 size={17}
-                color={passFocused ? C.orange : C.textMuted}
+                        color={passFocused ? C.textMedium : C.textMuted}
                 style={styles.inputIcon}
               />
               <TextInput
@@ -353,14 +327,21 @@ export default function SignUpScreen() {
               <Text style={styles.termsLink}>Privacy Policy</Text>
             </Text>
 
-            <TouchableOpacity activeOpacity={0.85} style={styles.primaryButton}>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={[styles.primaryButton, submitting && styles.primaryButtonDisabled]}
+              onPress={handleCreateAccount}
+              disabled={submitting}
+            >
               <LinearGradient
-                colors={[C.orangeDark, C.orange]}
+                colors={[COLORS.primaryDark, COLORS.secondaryDark]}
                 style={styles.primaryGradient}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
               >
-                <Text style={styles.primaryButtonText}>Create Account</Text>
+                <Text style={styles.primaryButtonText}>
+                  {submitting ? "Creating..." : "Create Account"}
+                </Text>
                 <Ionicons
                   name="arrow-forward"
                   size={17}
@@ -373,7 +354,7 @@ export default function SignUpScreen() {
             <View style={styles.loginRow}>
               <Text style={styles.loginText}>Already have an account? </Text>
               <TouchableOpacity
-                onPress={() => router.push("/sign-in")}
+                onPress={() => router.push("/(auth)/sign-in")}
                 activeOpacity={0.7}
               >
                 <Text style={styles.loginLink}>Sign In</Text>
@@ -410,7 +391,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 10,
-    backgroundColor: C.orange,
+    backgroundColor: COLORS.primaryDark,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -430,26 +411,12 @@ const styles = StyleSheet.create({
   titleAccent: {
     width: 4,
     height: 52,
-    backgroundColor: C.orange,
+    backgroundColor: COLORS.primaryDark,
     borderRadius: 2,
     marginTop: 4,
   },
-  title: { fontSize: 28, fontWeight: "900", color: C.text, marginBottom: 6 },
+  title: { fontSize: 28, fontWeight: "900", color: C.textStrong, marginBottom: 6 },
   subtitle: { fontSize: 13, color: C.textSub, lineHeight: 20 },
-  socialRow: { flexDirection: "row", gap: 12, marginBottom: 20 },
-  socialBtn: {
-    flex: 1,
-    flexDirection: "row",
-    height: 48,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: C.surface,
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  socialBtnText: { color: C.text, fontSize: 14, fontWeight: "600" },
   dividerRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -466,10 +433,43 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4,
     textTransform: "uppercase",
   },
+  roleGrid: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 18,
+  },
+  roleCard: {
+    flex: 1,
+    minHeight: 124,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: C.border,
+    backgroundColor: C.card,
+    padding: 14,
+  },
+  roleCardActive: {
+    borderColor: COLORS.primaryDark,
+    backgroundColor: "#fff",
+  },
+  roleCardTitle: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: C.textStrong,
+    marginTop: 12,
+    marginBottom: 6,
+  },
+  roleCardTitleActive: {
+    color: COLORS.primaryDark,
+  },
+  roleCardHelper: {
+    color: C.textSub,
+    fontSize: 12,
+    lineHeight: 18,
+  },
   roleSelector: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: C.surface,
+    backgroundColor: C.card,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: C.border,
@@ -477,14 +477,14 @@ const styles = StyleSheet.create({
     height: 52,
     marginBottom: 18,
   },
-  roleSelectorOpen: { borderColor: C.orange, backgroundColor: C.orangePale },
+  roleSelectorOpen: { borderColor: C.border, backgroundColor: C.bg },
   roleSelectorText: { flex: 1, color: C.textFaint, fontSize: 15 },
-  roleSelectorTextActive: { color: C.text },
+  roleSelectorTextActive: { color: C.textStrong },
   roleDropdown: {
     backgroundColor: "#fff",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: C.orange + "35",
+    borderColor: COLORS.border,
     marginTop: -12,
     marginBottom: 18,
     overflow: "hidden",
@@ -503,7 +503,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#F3F1EE",
   },
-  roleOptionActive: { backgroundColor: C.orangePale },
+  roleOptionActive: { backgroundColor: C.bgOff },
   roleIconWrap: {
     width: 32,
     height: 32,
@@ -512,14 +512,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  roleIconWrapActive: { backgroundColor: C.orange + "20" },
+  roleIconWrapActive: { backgroundColor: "#E2E8F0" },
   roleOptionText: {
-    flex: 1,
     color: C.textSub,
     fontSize: 14,
     fontWeight: "500",
   },
-  roleOptionTextActive: { color: C.orange, fontWeight: "700" },
+  roleOptionTextActive: { color: C.textStrong, fontWeight: "700" },
+  roleOptionHelper: {
+    marginTop: 2,
+    color: C.textInert,
+    fontSize: 11,
+  },
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
@@ -531,7 +535,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     height: 52,
   },
-  inputFocused: { borderColor: C.orange, backgroundColor: C.orangePale },
+  inputFocused: { borderColor: C.border, backgroundColor: C.bg },
   inputIcon: { marginRight: 10 },
   input: { flex: 1, color: C.text, fontSize: 15 },
   eyeBtn: { padding: 4 },
@@ -558,21 +562,23 @@ const styles = StyleSheet.create({
     marginBottom: 22,
     textAlign: "center",
   },
-  termsLink: { color: C.orange, fontWeight: "600" },
+  termsLink: { color: C.textStrong, fontWeight: "600" },
   primaryButton: {
     borderRadius: 14,
     overflow: "hidden",
-    shadowColor: C.orange,
+    shadowColor: COLORS.primaryDark,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 12,
     elevation: 8,
   },
+  primaryButtonDisabled: { opacity: 0.7 },
   primaryGradient: {
     height: 54,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: COLORS.primaryDark,
   },
   primaryButtonText: {
     color: "#fff",
@@ -582,5 +588,5 @@ const styles = StyleSheet.create({
   },
   loginRow: { flexDirection: "row", justifyContent: "center", marginTop: 20 },
   loginText: { color: C.textMuted, fontSize: 14 },
-  loginLink: { color: C.orange, fontSize: 14, fontWeight: "700" },
+  loginLink: { color: COLORS.primaryDark, fontSize: 14, fontWeight: "700" },
 });

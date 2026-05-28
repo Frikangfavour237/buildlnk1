@@ -4,6 +4,8 @@ import { router } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
+  Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -14,32 +16,47 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { loginUser } from "@/services/authService";
+import { useLocalSearchParams } from "expo-router";
+import { COLORS } from "../../constants/theme";
 
 const C = {
-  orange: "#E8620A",
-  orangeLight: "#F97316",
-  orangeDark: "#C4520A",
-  orangePale: "#FEF0E6",
+  orange: COLORS.primary,
+  orangeLight: COLORS.secondaryDark,
+  orangeDark: COLORS.primaryDark,
+  orangePale: "#EEF2F7",
   yellow: "#CA8A04",
-  bg: "#FFFFFF",
-  surface: "#F3F1EE",
-  border: "#E5E2DC",
-  text: "#1A1712",
-  textSub: "#5C5650",
-  textMuted: "#9C958D",
-  textFaint: "#C4BDB4",
+  bg: COLORS.background,
+  surface: COLORS.card,
+  border: COLORS.border,
+  text: COLORS.textPrimary,
+  textSub: COLORS.textSecondary,
+  textMuted: COLORS.textMuted,
+  textFaint: "#cbd5e1",
+  textStrong: COLORS.textPrimary,
+  textMedium: COLORS.textSecondary,
+  textInert: COLORS.textMuted,
 };
 
 export default function SignInScreen() {
   const insets = useSafeAreaInsets();
+  const params = useLocalSearchParams<{ email?: string }>();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passFocused, setPassFocused] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(24)).current;
+
+  useEffect(() => {
+    if (typeof params.email === "string" && params.email.length > 0) {
+      setEmail(params.email);
+    }
+  }, [params.email]);
 
   useEffect(() => {
     Animated.parallel([
@@ -55,6 +72,27 @@ export default function SignInScreen() {
       }),
     ]).start();
   }, []);
+
+  const handleSignIn = async () => {
+    if (!email || !password) {
+      setErrorMessage("Enter both your email and password.");
+      Alert.alert("Missing details", "Enter both your email and password.");
+      return;
+    }
+
+    setSubmitting(true);
+    setErrorMessage("");
+
+    const result = await loginUser(email.trim(), password);
+    if (result.success) {
+      router.replace("/");
+    } else {
+      const message = result.error || "Unable to sign in right now.";
+      setErrorMessage(message);
+      Alert.alert("Sign in failed", message);
+    }
+    setSubmitting(false);
+  };
 
   return (
     <View style={styles.container}>
@@ -86,11 +124,13 @@ export default function SignInScreen() {
               { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
             ]}
           >
-            <View style={styles.logoMark}>
-              <Ionicons name="hammer" size={18} color="#fff" />
-            </View>
+            <Image
+              source={require("../../assets/images/build logo1.png")}
+              style={{ width: 32, height: 32, borderRadius: 8 }}
+              resizeMode="contain"
+            />
             <View>
-              <Text style={styles.brandName}>BUILDLNK</Text>
+              <Text style={styles.brandName}>BUILDIn</Text>
               <Text style={styles.brandSub}>Construction Jobs Cameroon</Text>
             </View>
           </Animated.View>
@@ -111,26 +151,9 @@ export default function SignInScreen() {
             </View>
           </Animated.View>
 
-          {/* Social */}
-          <Animated.View
-            style={[
-              styles.socialRow,
-              { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-            ]}
-          >
-            <TouchableOpacity style={styles.socialBtn} activeOpacity={0.75}>
-              <Ionicons name="logo-google" size={18} color={C.text} />
-              <Text style={styles.socialBtnText}>Google</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.socialBtn} activeOpacity={0.75}>
-              <Ionicons name="logo-linkedin" size={18} color={C.text} />
-              <Text style={styles.socialBtnText}>LinkedIn</Text>
-            </TouchableOpacity>
-          </Animated.View>
-
           <Animated.View style={[styles.dividerRow, { opacity: fadeAnim }]}>
             <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or sign in with email</Text>
+            <Text style={styles.dividerText}>sign in with email</Text>
             <View style={styles.dividerLine} />
           </Animated.View>
 
@@ -148,7 +171,7 @@ export default function SignInScreen() {
               <Ionicons
                 name="mail-outline"
                 size={17}
-                color={emailFocused ? C.orange : C.textMuted}
+                color={emailFocused ? C.textMedium : C.textMuted}
                 style={styles.inputIcon}
               />
               <TextInput
@@ -171,7 +194,7 @@ export default function SignInScreen() {
               <Ionicons
                 name="lock-closed-outline"
                 size={17}
-                color={passFocused ? C.orange : C.textMuted}
+                color={passFocused ? C.textMedium : C.textMuted}
                 style={styles.inputIcon}
               />
               <TextInput
@@ -198,20 +221,34 @@ export default function SignInScreen() {
 
             <TouchableOpacity
               style={styles.forgotRow}
-              onPress={() => router.push("/forgot-password")}
+              onPress={() => router.push("/(auth)/forgot-password")}
               activeOpacity={0.7}
             >
               <Text style={styles.forgotText}>Forgot password?</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity activeOpacity={0.85} style={styles.primaryButton}>
+            {errorMessage ? (
+              <View style={styles.errorBox}>
+                <Ionicons name="alert-circle-outline" size={16} color="#b91c1c" />
+                <Text style={styles.errorText}>{errorMessage}</Text>
+              </View>
+            ) : null}
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={[styles.primaryButton, submitting && styles.primaryButtonDisabled]}
+              onPress={handleSignIn}
+              disabled={submitting}
+            >
               <LinearGradient
-                colors={[C.orangeDark, C.orange]}
+                colors={[COLORS.primaryDark, COLORS.secondaryDark]}
                 style={styles.primaryGradient}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
               >
-                <Text style={styles.primaryButtonText}>Sign In</Text>
+                <Text style={styles.primaryButtonText}>
+                  {submitting ? "Signing In..." : "Sign In"}
+                </Text>
                 <Ionicons
                   name="arrow-forward"
                   size={17}
@@ -222,14 +259,15 @@ export default function SignInScreen() {
             </TouchableOpacity>
 
             <View style={styles.registerRow}>
-              <Text style={styles.registerText}>Don't have an account? </Text>
+              <Text style={styles.registerText}>Don&apos;t have an account? </Text>
               <TouchableOpacity
-                onPress={() => router.push("/sign-up")}
+                onPress={() => router.push("/(auth)/sign-up")}
                 activeOpacity={0.7}
               >
                 <Text style={styles.registerLink}>Sign Up</Text>
               </TouchableOpacity>
             </View>
+
           </Animated.View>
 
           {/* Trust */}
@@ -254,12 +292,12 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: "#F3F1EE",
+    backgroundColor: COLORS.card,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: "#E5E2DC",
+    borderColor: COLORS.border,
   },
   brandRow: {
     flexDirection: "row",
@@ -271,7 +309,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 10,
-    backgroundColor: C.orange,
+    backgroundColor: C.orangeLight,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -291,30 +329,16 @@ const styles = StyleSheet.create({
   titleAccent: {
     width: 4,
     height: 52,
-    backgroundColor: C.orange,
+    backgroundColor: COLORS.primaryDark,
     borderRadius: 2,
     marginTop: 4,
   },
-  title: { fontSize: 28, fontWeight: "900", color: C.text, marginBottom: 6 },
+  title: { fontSize: 28, fontWeight: "900", color: C.textStrong, marginBottom: 6 },
   subtitle: { fontSize: 14, color: C.textSub, lineHeight: 20 },
-  socialRow: { flexDirection: "row", gap: 12, marginBottom: 20 },
-  socialBtn: {
-    flex: 1,
-    flexDirection: "row",
-    height: 48,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: C.surface,
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  socialBtnText: { color: C.text, fontSize: 14, fontWeight: "600" },
   dividerRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 24,
     gap: 10,
   },
   dividerLine: { flex: 1, height: 1, backgroundColor: C.border },
@@ -338,26 +362,47 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     height: 52,
   },
-  inputFocused: { borderColor: C.orange, backgroundColor: C.orangePale },
+  inputFocused: { borderColor: COLORS.primaryDark, backgroundColor: "#fff" },
   inputIcon: { marginRight: 10 },
   input: { flex: 1, color: C.text, fontSize: 15 },
   eyeBtn: { padding: 4 },
   forgotRow: { alignSelf: "flex-end", marginBottom: 24, marginTop: -4 },
-  forgotText: { color: C.orange, fontSize: 13, fontWeight: "600" },
+  forgotText: { color: C.textMedium, fontSize: 13, fontWeight: "600" },
+  errorBox: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    marginTop: -8,
+    marginBottom: 18,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: "#fef2f2",
+    borderWidth: 1,
+    borderColor: "#fecaca",
+  },
+  errorText: {
+    flex: 1,
+    color: "#b91c1c",
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: "600",
+  },
   primaryButton: {
     borderRadius: 14,
     overflow: "hidden",
-    shadowColor: C.orange,
+    shadowColor: COLORS.primaryDark,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 12,
     elevation: 8,
   },
+  primaryButtonDisabled: { opacity: 0.7 },
   primaryGradient: {
     height: 54,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: COLORS.primaryDark,
   },
   primaryButtonText: {
     color: "#fff",
@@ -371,7 +416,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   registerText: { color: C.textMuted, fontSize: 14 },
-  registerLink: { color: C.orange, fontSize: 14, fontWeight: "700" },
+  registerLink: { color: COLORS.primaryDark, fontSize: 14, fontWeight: "700" },
   trustRow: {
     flexDirection: "row",
     justifyContent: "center",
@@ -383,6 +428,6 @@ const styles = StyleSheet.create({
     borderTopColor: C.border,
   },
   trustBadge: { flexDirection: "row", alignItems: "center", gap: 5 },
-  trustDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: C.orange },
+  trustDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: COLORS.primaryDark },
   trustText: { color: C.textMuted, fontSize: 11, fontWeight: "500" },
 });

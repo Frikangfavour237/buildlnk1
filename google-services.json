@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "155039505258",
+    "project_id": "buildin-1dd4d",
+    "storage_bucket": "buildin-1dd4d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:155039505258:android:4202fefc08b4de52a16313",
+        "android_client_info": {
+          "package_name": "com.kemachi.buildin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAvMS7aWnsW1jxjhW8EhR6N_cijZRENLtE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:155039505258:android:f98dafb59c5339f1a16313",
+        "android_client_info": {
+          "package_name": "teamdesgidn.com"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAvMS7aWnsW1jxjhW8EhR6N_cijZRENLtE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

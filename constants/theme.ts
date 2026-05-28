@@ -1,53 +1,49 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
+export const COLORS = {
+  primary: "#E8620A",
+  primaryDark: "#1a2332",
+  secondaryDark: "#2d3748",
+  textPrimary: "#1a1a1a",
+  textSecondary: "#6b7280",
+  textMuted: "#9ca3af",
+  background: "#f9fafb",
+  card: "#ffffff",
+  border: "#e5e7eb",
+  success: "#10b981",
+  error: "#ef4444",
+  availableBg: "#d1fae5",
+  availableText: "#065f46",
+  busyBg: "#fef3c7",
+  busyText: "#92400e",
+  unavailableBg: "#fee2e2",
+  unavailableText: "#991b1b",
+  tagBg: "#f3f4f6",
+  tagText: "#374151",
+} as const;
 
-import { Platform } from 'react-native';
+export const SHADOW = {
+  shadowColor: "#000",
+  shadowOpacity: 0.06,
+  shadowRadius: 8,
+  shadowOffset: { width: 0, height: 2 },
+  elevation: 2,
+} as const;
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+export const INPUT = {
+  borderWidth: 1,
+  borderColor: COLORS.border,
+  borderRadius: 8,
+  backgroundColor: COLORS.card,
+  paddingHorizontal: 12,
+  paddingVertical: 12,
+  fontSize: 15,
+  color: COLORS.textPrimary,
+} as const;
 
-export const Colors = {
-  light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
-  },
-  dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
-  },
-};
-
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
-  },
-  default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
-  },
-  web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-    serif: "Georgia, 'Times New Roman', serif",
-    rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
-    mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-  },
-});
+export const CARD = {
+  backgroundColor: COLORS.card,
+  borderRadius: 12,
+  borderWidth: 1,
+  borderColor: COLORS.border,
+  padding: 16,
+  ...SHADOW,
+} as const;

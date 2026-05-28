@@ -98,7 +98,7 @@ export default function ForgotPasswordScreen() {
 
               <Text style={styles.title}>Forgot password?</Text>
               <Text style={styles.subtitle}>
-                No worries! Enter your email and we'll send you a reset link.
+                No worries! Enter your email and we&apos;ll send you a reset link.
               </Text>
 
               <Text style={styles.label}>Email address</Text>
@@ -140,7 +140,7 @@ export default function ForgotPasswordScreen() {
 
               <TouchableOpacity
                 style={styles.backToLogin}
-                onPress={() => router.push("/sign-in")}
+                onPress={() => router.push("/(auth)/sign-in")}
                 activeOpacity={0.7}
               >
                 <Ionicons
@@ -172,7 +172,7 @@ export default function ForgotPasswordScreen() {
 
               <TouchableOpacity
                 activeOpacity={0.85}
-                onPress={() => router.push("/sign-in")}
+                onPress={() => router.push("/(auth)/sign-in")}
                 style={{ width: "100%" }}
               >
                 <LinearGradient
@@ -191,7 +191,7 @@ export default function ForgotPasswordScreen() {
                 onPress={handleSend}
               >
                 <Text style={styles.resendText}>
-                  Didn't receive the email?{" "}
+                  Didn&apos;t receive the email?{" "}
                   <Text style={styles.resendLink}>Resend</Text>
                 </Text>
               </TouchableOpacity>

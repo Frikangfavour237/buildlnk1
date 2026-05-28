@@ -5,6 +5,7 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -33,6 +34,9 @@ const C = {
   textMuted: "#9C958D",
   textFaint: "#C4BDB4",
   shadow: "rgba(26,23,18,0.08)",
+  textStrong: "#1a1a1a",
+  textMedium: "#666666",
+  textInert: "#999999",
 };
 
 const CATEGORIES = [
@@ -215,9 +219,16 @@ function JobCard({ job }: { job: (typeof JOBS)[0] }) {
         </View>
         <View style={{ flex: 1, marginLeft: 12 }}>
           <Text style={styles.jobCompany}>{job.company}</Text>
-          <Text style={styles.jobTitle} numberOfLines={1}>
-            {job.title}
-          </Text>
+          <View style={styles.titleRow}>
+            <Text style={styles.jobTitle} numberOfLines={1}>
+              {job.title}
+            </Text>
+            {isDeadlinePassed(job.applicationDeadline) ? (
+              <View style={styles.deadlineBadge}>
+                <Text style={styles.deadlineBadgeText}>Deadline Passed</Text>
+              </View>
+            ) : null}
+          </View>
         </View>
         <TouchableOpacity style={styles.bookmarkBtn}>
           <Ionicons name="bookmark-outline" size={18} color={C.textFaint} />
@@ -257,9 +268,13 @@ function JobCard({ job }: { job: (typeof JOBS)[0] }) {
         <Text style={styles.salary}>{job.salary}</Text>
         <View style={styles.applyRow}>
           <Text style={styles.postedTime}>{job.posted}</Text>
-          <View style={[styles.applyBtn, { backgroundColor: job.color }]}>
+          <TouchableOpacity
+            style={[styles.applyBtn, { backgroundColor: job.color }]}
+            onPress={() => router.push("/(auth)/sign-in")}
+            activeOpacity={0.8}
+          >
             <Text style={styles.applyText}>Apply</Text>
-          </View>
+          </TouchableOpacity>
         </View>
       </View>
     </TouchableOpacity>
@@ -288,6 +303,22 @@ function CompanyCard({ company }: { company: (typeof COMPANIES)[0] }) {
     </TouchableOpacity>
   );
 }
+
+const toDateValue = (value: any) => {
+  if (!value) return null;
+  if (typeof value?.toDate === "function") return value.toDate();
+  if (value instanceof Date) return value;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const isDeadlinePassed = (deadline: any) => {
+  const date = toDateValue(deadline);
+  if (!date) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return date.getTime() < today.getTime();
+};
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -330,7 +361,7 @@ export default function HomeScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 90 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
         style={{ backgroundColor: C.bg }}
       >
         {/* Header */}
@@ -341,21 +372,23 @@ export default function HomeScreen() {
           ]}
         >
           <View style={styles.headerLeft}>
-            <View style={styles.logoMark}>
-              <Ionicons name="hammer" size={14} color="#fff" />
-            </View>
+            <Image
+              source={require("../../assets/images/build logo1.png")}
+              style={{ width: 50, height: 50, borderRadius: 8 }}
+              resizeMode="contain"
+            />
             <View>
-              <Text style={styles.brandTag}>BUILDLNK</Text>
+              <Text style={styles.brandTag}>Workforce Mobilization</Text>
               <Text style={styles.headerSub}>Construction Jobs Cameroon</Text>
             </View>
           </View>
           <TouchableOpacity
-            onPress={() => router.push("/sign-in")}
+            onPress={() => router.push("/(auth)/sign-in")}
             activeOpacity={0.85}
           >
             <View style={styles.avatarRing}>
               <View style={styles.avatar}>
-                <Ionicons name="person-outline" size={17} color={C.orange} />
+                <Ionicons name="person-outline" size={17} color={C.textMedium} />
               </View>
             </View>
           </TouchableOpacity>
@@ -413,7 +446,7 @@ export default function HomeScreen() {
             <Ionicons
               name="search-outline"
               size={18}
-              color={searchFocused ? C.orange : C.textMuted}
+              color={searchFocused ? C.textMedium : C.textMuted}
               style={{ marginRight: 10 }}
             />
             <TextInput
@@ -444,7 +477,7 @@ export default function HomeScreen() {
               <Ionicons
                 name="options-outline"
                 size={20}
-                color={showSort ? "#fff" : C.orange}
+                color={showSort ? "#fff" : C.textMedium}
               />
             </View>
           </TouchableOpacity>
@@ -472,7 +505,7 @@ export default function HomeScreen() {
                     <Ionicons
                       name="checkmark"
                       size={12}
-                      color={C.orange}
+                      color={C.textMedium}
                       style={{ marginRight: 4 }}
                     />
                   )}
@@ -506,7 +539,7 @@ export default function HomeScreen() {
                 <Ionicons
                   name={stat.icon as any}
                   size={15}
-                  color={C.orange}
+                  color={C.textMedium}
                   style={{ marginBottom: 5 }}
                 />
                 <Text style={styles.statValue}>{stat.value}</Text>
@@ -580,7 +613,7 @@ export default function HomeScreen() {
         <Animated.View style={{ opacity: fadeAnim }}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Top Employers</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push("/(tabs)/explore")}>
               <Text style={styles.seeAll}>See all</Text>
             </TouchableOpacity>
           </View>
@@ -615,7 +648,11 @@ export default function HomeScreen() {
               <Text style={styles.ctaSubtitle}>
                 Reach 1,200+ skilled construction professionals across Cameroon
               </Text>
-              <TouchableOpacity style={styles.ctaBtn} activeOpacity={0.85}>
+              <TouchableOpacity
+                style={styles.ctaBtn}
+                activeOpacity={0.85}
+                onPress={() => router.push("/(auth)/sign-up")}
+              >
                 <Text style={styles.ctaBtnText}>Post a Job</Text>
                 <Ionicons
                   name="arrow-forward"
@@ -627,77 +664,7 @@ export default function HomeScreen() {
             </View>
           </View>
         </Animated.View>
-
-        {/* Footer */}
-        <View style={styles.footer}>
-          <View style={styles.footerDivider} />
-          <View style={styles.footerTop}>
-            <View style={styles.footerLogoMark}>
-              <Ionicons name="hammer" size={13} color="#fff" />
-            </View>
-            <Text style={styles.footerBrand}>BUILDLNK</Text>
-          </View>
-          <Text style={styles.footerTagline}>
-            The construction jobs platform for Cameroon.
-          </Text>
-
-          <View style={styles.footerLinks}>
-            {["About", "Post a Job", "Blog", "Privacy", "Terms", "Help"].map(
-              (link) => (
-                <TouchableOpacity key={link}>
-                  <Text style={styles.footerLink}>{link}</Text>
-                </TouchableOpacity>
-              ),
-            )}
-          </View>
-
-          <View style={styles.footerBottom}>
-            <Text style={styles.footerCopy}>
-              2025 BUILDLNK. All rights reserved.
-            </Text>
-            <View style={styles.footerSocials}>
-              {(
-                ["logo-linkedin", "logo-whatsapp", "logo-facebook"] as const
-              ).map((icon) => (
-                <TouchableOpacity key={icon} style={styles.socialIcon}>
-                  <Ionicons name={icon} size={15} color={C.textMuted} />
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        </View>
       </ScrollView>
-
-      {/* Bottom Tab Bar */}
-      <View style={[styles.tabBar, { paddingBottom: insets.bottom + 6 }]}>
-        {[
-          { icon: "home", label: "Home", active: true },
-          { icon: "briefcase-outline", label: "Jobs", active: false },
-          { icon: "bookmark-outline", label: "Saved", active: false },
-          { icon: "person-outline", label: "Profile", active: false },
-        ].map((tab) => (
-          <TouchableOpacity
-            key={tab.label}
-            style={styles.tabItem}
-            activeOpacity={0.7}
-          >
-            <View
-              style={[styles.tabIconWrap, tab.active && styles.tabIconActive]}
-            >
-              <Ionicons
-                name={tab.icon as any}
-                size={20}
-                color={tab.active ? "#fff" : C.textMuted}
-              />
-            </View>
-            <Text
-              style={[styles.tabLabel, tab.active && styles.tabLabelActive]}
-            >
-              {tab.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
     </View>
   );
 }
@@ -716,14 +683,6 @@ const styles = StyleSheet.create({
     borderBottomColor: C.border,
   },
   headerLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
-  logoMark: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: C.orange,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   brandTag: {
     fontSize: 14,
     fontWeight: "900",
@@ -820,7 +779,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     height: 48,
   },
-  searchBarFocused: { borderColor: C.orange, backgroundColor: C.orangePale },
+  searchBarFocused: { borderColor: C.border, backgroundColor: C.bg },
   searchInput: { flex: 1, color: C.text, fontSize: 14 },
   filterBtn: {
     width: 48,
@@ -868,8 +827,8 @@ const styles = StyleSheet.create({
     borderColor: C.orange + "50",
     backgroundColor: C.orangePale,
   },
-  sortOptionText: { color: C.textSub, fontSize: 13, fontWeight: "500" },
-  sortOptionTextActive: { color: C.orange, fontWeight: "700" },
+  sortOptionText: { color: C.textMedium, fontSize: 13, fontWeight: "500" },
+  sortOptionTextActive: { color: C.textStrong, fontWeight: "700" },
   statsRow: {
     flexDirection: "row",
     marginHorizontal: 20,
@@ -889,7 +848,7 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 18,
     fontWeight: "800",
-    color: C.text,
+    color: C.textStrong,
     marginBottom: 2,
   },
   statLabel: {
@@ -924,10 +883,10 @@ const styles = StyleSheet.create({
     marginTop: 24,
     marginBottom: 14,
   },
-  sectionTitle: { fontSize: 17, fontWeight: "800", color: C.text },
-  seeAll: { fontSize: 13, color: C.orange, fontWeight: "600" },
+  sectionTitle: { fontSize: 17, fontWeight: "800", color: C.textStrong },
+  seeAll: { fontSize: 13, color: C.textMedium, fontWeight: "600" },
   sortIndicator: { flexDirection: "row", alignItems: "center", gap: 4 },
-  sectionSort: { fontSize: 12, color: C.orange, fontWeight: "600" },
+  sectionSort: { fontSize: 12, color: C.textMedium, fontWeight: "600" },
   jobCard: {
     marginHorizontal: 20,
     marginBottom: 12,
@@ -959,6 +918,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
   jobCardHeader: { flexDirection: "row", alignItems: "flex-start" },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 8,
+  },
   companyLogo: {
     width: 46,
     height: 46,
@@ -972,7 +937,19 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     marginBottom: 2,
   },
-  jobTitle: { fontSize: 15, color: C.text, fontWeight: "700" },
+  jobTitle: { fontSize: 15, color: C.textStrong, fontWeight: "700" },
+  deadlineBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: "#fee2e2",
+  },
+  deadlineBadgeText: {
+    color: "#dc2626",
+    fontSize: 10,
+    fontWeight: "800",
+    textTransform: "uppercase",
+  },
   bookmarkBtn: { padding: 4 },
   jobMeta: {
     flexDirection: "row",
@@ -981,7 +958,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   metaChip: { flexDirection: "row", alignItems: "center", gap: 4 },
-  metaText: { fontSize: 12, color: C.textMuted },
+  metaText: { fontSize: 12, color: C.textMedium },
   metaDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: C.border },
   tagRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12 },
   tag: {
@@ -1000,9 +977,9 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: C.border,
   },
-  salary: { fontSize: 14, color: C.text, fontWeight: "800" },
+  salary: { fontSize: 14, color: C.textStrong, fontWeight: "800" },
   applyRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  postedTime: { fontSize: 11, color: C.textFaint },
+  postedTime: { fontSize: 11, color: C.textInert },
   applyBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 9 },
   applyText: { color: "#fff", fontSize: 12, fontWeight: "800" },
   companiesScroll: { paddingHorizontal: 20, gap: 12, paddingBottom: 4 },
@@ -1043,7 +1020,7 @@ const styles = StyleSheet.create({
   },
   companyFollowText: { fontSize: 11, fontWeight: "700" },
   emptyState: { alignItems: "center", paddingVertical: 48, gap: 8 },
-  emptyText: { color: C.textSub, fontSize: 15, fontWeight: "600" },
+  emptyText: { color: C.textStrong, fontSize: 15, fontWeight: "600" },
   emptySubText: { color: C.textMuted, fontSize: 13 },
   ctaBanner: {
     borderRadius: 18,
@@ -1084,73 +1061,4 @@ const styles = StyleSheet.create({
     borderRadius: 9,
   },
   ctaBtnText: { color: "#fff", fontSize: 13, fontWeight: "800" },
-  footer: { paddingHorizontal: 20, marginTop: 32, paddingBottom: 8 },
-  footerDivider: { height: 1, backgroundColor: C.border, marginBottom: 24 },
-  footerTop: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 6,
-  },
-  footerLogoMark: {
-    width: 26,
-    height: 26,
-    borderRadius: 7,
-    backgroundColor: C.orange,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  footerBrand: {
-    fontSize: 15,
-    fontWeight: "900",
-    color: C.text,
-    letterSpacing: 1.5,
-  },
-  footerTagline: { fontSize: 12, color: C.textMuted, marginBottom: 18 },
-  footerLinks: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 14,
-    marginBottom: 20,
-  },
-  footerLink: { fontSize: 13, color: C.textSub, fontWeight: "500" },
-  footerBottom: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  footerCopy: { fontSize: 11, color: C.textFaint },
-  footerSocials: { flexDirection: "row", gap: 8 },
-  socialIcon: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    backgroundColor: C.surface,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: C.border,
-  },
-  tabBar: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    backgroundColor: C.bg,
-    borderTopWidth: 1,
-    borderTopColor: C.border,
-    paddingTop: 10,
-  },
-  tabItem: { flex: 1, alignItems: "center", gap: 4 },
-  tabIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  tabIconActive: { backgroundColor: C.orange },
-  tabLabel: { fontSize: 9, color: C.textMuted, fontWeight: "500" },
-  tabLabelActive: { color: C.orange, fontWeight: "700" },
 });
