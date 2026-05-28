@@ -52,6 +52,13 @@ export default function SignInScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(24)).current;
 
+  const routeForRole = (role?: string | null) => {
+    if (role === "worker") return "/(worker)/dashboard";
+    if (role === "contractor") return "/(contractor)/dashboard";
+    if (role === "admin") return "/admin/dashboard";
+    return "/";
+  };
+
   useEffect(() => {
     if (typeof params.email === "string" && params.email.length > 0) {
       setEmail(params.email);
@@ -85,7 +92,7 @@ export default function SignInScreen() {
 
     const result = await loginUser(email.trim(), password);
     if (result.success) {
-      router.replace("/");
+      router.replace(routeForRole(result.profile?.role));
     } else {
       const message = result.error || "Unable to sign in right now.";
       setErrorMessage(message);

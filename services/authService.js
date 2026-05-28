@@ -25,7 +25,11 @@ export const loginUser = async (email, password) => {
       };
     }
 
-    return { success: true, user: userCredential.user };
+    return {
+      success: true,
+      user: userCredential.user,
+      profile: userData ? { id: userDoc.id, ...userData } : null,
+    };
   } catch (error) {
     return { success: false, error: error.message };
   }

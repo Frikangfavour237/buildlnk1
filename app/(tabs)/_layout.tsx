@@ -1,6 +1,6 @@
-
-import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { Tabs } from "expo-router";
+import { Platform } from "react-native";
 
 export default function TabLayout() {
   return (
@@ -11,6 +11,7 @@ export default function TabLayout() {
         tabBarActiveTintColor: "#E8620A",
         tabBarInactiveTintColor: "#999999",
         tabBarStyle: {
+          display: Platform.OS === "web" ? "none" : "flex",
           backgroundColor: "#FFFFFF",
           borderTopWidth: 1,
           borderTopColor: "#E5E2DC",

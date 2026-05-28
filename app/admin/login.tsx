@@ -16,7 +16,10 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { auth } from "../../firebase";
-import { ADMIN_EMAIL, verifyAdminCredentials } from "../../services/adminService";
+import {
+  ADMIN_EMAIL,
+  verifyAdminCredentials,
+} from "../../services/adminService";
 
 const C = {
   orange: "#E8620A",
@@ -121,13 +124,20 @@ export default function AdminLoginScreen() {
           }}
           keyboardShouldPersistTaps="handled"
         >
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => router.back()}
+          >
             <Ionicons name="arrow-back" size={20} color={C.textSub} />
           </TouchableOpacity>
 
           <View style={styles.hero}>
             <View style={styles.iconWrap}>
-              <Ionicons name="shield-checkmark-outline" size={28} color="#fff" />
+              <Ionicons
+                name="shield-checkmark-outline"
+                size={28}
+                color="#fff"
+              />
             </View>
             <Text style={styles.kicker}>ADMIN ACCESS</Text>
             <Text style={styles.title}>BuildIn Admin</Text>
@@ -152,7 +162,11 @@ export default function AdminLoginScreen() {
 
           <Text style={styles.label}>Password</Text>
           <View style={styles.inputWrap}>
-            <Ionicons name="lock-closed-outline" size={18} color={C.textMuted} />
+            <Ionicons
+              name="lock-closed-outline"
+              size={18}
+              color={C.textMuted}
+            />
             <TextInput
               style={styles.input}
               placeholder="Password"
@@ -175,10 +189,6 @@ export default function AdminLoginScreen() {
               {submitting ? "Signing In..." : "Login"}
             </Text>
           </TouchableOpacity>
-
-          <Text style={styles.note}>
-            First admin record: `buildin_admin` / `BuildIn@2026`
-          </Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>

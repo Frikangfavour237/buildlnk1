@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
+import { Platform } from "react-native";
 
 export default function WorkerLayout() {
   return (
@@ -8,6 +9,9 @@ export default function WorkerLayout() {
         headerShown: false,
         tabBarActiveTintColor: "#E8620A",
         tabBarInactiveTintColor: "#999999",
+        tabBarStyle: {
+          display: Platform.OS === "web" ? "none" : "flex",
+        },
       }}
     >
       <Tabs.Screen
